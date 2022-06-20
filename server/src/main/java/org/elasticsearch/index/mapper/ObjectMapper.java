@@ -351,7 +351,13 @@ public class ObjectMapper extends Mapper implements Cloneable {
             if(this.enabled.explicit())
                 return mergeWith;
             else
-                throw new IllegalArgumentException("can't merge a non object mapping [" + mergeWith.name() + "] with an object mapping");
+            throw new IllegalArgumentException("can't merge a non object mapping [" + mergeWith.name() + "] with an object mapping");
+        }
+        if(this.enabled.explicit()) {
+            ObjectMapper mergeWithObject = (ObjectMapper)mergeWith;
+            if(mergeWithObject.enabled.explicit() == false) {
+                return mergeWithObject;
+            }
         }
         if (mergeWith instanceof NestedObjectMapper) {
             // TODO stop NestedObjectMapper extending ObjectMapper?
