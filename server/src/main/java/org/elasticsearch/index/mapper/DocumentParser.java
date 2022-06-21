@@ -361,7 +361,7 @@ public final class DocumentParser {
         int lastIndex = parentMappers.size() - 1;
         ObjectMapper withNewMapper = parentMappers.get(lastIndex).mappingUpdate(mapper);
         if (merge) {
-            withNewMapper = parentMappers.get(lastIndex).merge(withNewMapper);
+            withNewMapper = (ObjectMapper)parentMappers.get(lastIndex).merge(withNewMapper);
         }
         parentMappers.set(lastIndex, withNewMapper);
     }

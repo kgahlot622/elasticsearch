@@ -49,7 +49,7 @@ public class ObjectMapperMergeTests extends ESTestCase {
         ObjectMapper mergeWith = createMapping(false, true, true, true);
 
         // WHEN merging mappings
-        final ObjectMapper merged = rootObjectMapper.merge(mergeWith);
+        final ObjectMapper merged = (ObjectMapper)rootObjectMapper.merge(mergeWith);
 
         // THEN "baz" new field is added to merged mapping
         final ObjectMapper mergedFoo = (ObjectMapper) merged.getMapper("foo");
@@ -84,7 +84,7 @@ public class ObjectMapperMergeTests extends ESTestCase {
         MapperException e = expectThrows(MapperException.class, () -> rootObjectMapper.merge(mergeWith));
         assertEquals("the [enabled] parameter can't be updated for the object mapping [disabled]", e.getMessage());
 
-        ObjectMapper result = rootObjectMapper.merge(mergeWith, MapperService.MergeReason.INDEX_TEMPLATE);
+        ObjectMapper result = (ObjectMapper)rootObjectMapper.merge(mergeWith, MapperService.MergeReason.INDEX_TEMPLATE);
         assertTrue(result.isEnabled());
     }
 
@@ -96,7 +96,7 @@ public class ObjectMapperMergeTests extends ESTestCase {
         MapperException e = expectThrows(MapperException.class, () -> firstMapper.merge(secondMapper));
         assertEquals("the [enabled] parameter can't be updated for the object mapping [" + type + "]", e.getMessage());
 
-        ObjectMapper result = firstMapper.merge(secondMapper, MapperService.MergeReason.INDEX_TEMPLATE);
+        ObjectMapper result = (ObjectMapper)firstMapper.merge(secondMapper, MapperService.MergeReason.INDEX_TEMPLATE);
         assertFalse(result.isEnabled());
     }
 

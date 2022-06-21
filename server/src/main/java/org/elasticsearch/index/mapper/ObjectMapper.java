@@ -321,7 +321,7 @@ public class ObjectMapper extends Mapper implements Cloneable {
     }
 
     @Override
-    public ObjectMapper merge(Mapper mergeWith) {
+    public Mapper merge(Mapper mergeWith) {
         return merge(mergeWith, MergeReason.MAPPING_UPDATE);
     }
 
@@ -332,26 +332,18 @@ public class ObjectMapper extends Mapper implements Cloneable {
         }
     }
 
-    public ObjectMapper merge(Mapper mergeWith, MergeReason reason) {
-        if ((mergeWith instanceof ObjectMapper) == false) {
-            throw new IllegalArgumentException("can't merge a non object mapping [" + mergeWith.name() + "] with an object mapping");
-        }
-        if (mergeWith instanceof NestedObjectMapper) {
-            // TODO stop NestedObjectMapper extending ObjectMapper?
-            throw new IllegalArgumentException("can't merge a nested mapping [" + mergeWith.name() + "] with a non-nested mapping");
-        }
-        ObjectMapper mergeWithObject = (ObjectMapper) mergeWith;
-        ObjectMapper merged = clone();
-        merged.doMerge(mergeWithObject, reason);
-        return merged;
-    }
-
-    public Mapper mergeInObject(Mapper mergeWith, MergeReason reason) {
+    public Mapper merge(Mapper mergeWith, MergeReason reason) {
         if ((mergeWith instanceof ObjectMapper) == false) {
             if(this.enabled.explicit())
                 return mergeWith;
             else
                 throw new IllegalArgumentException("can't merge a non object mapping [" + mergeWith.name() + "] with an object mapping");
+        }
+        if(this.enabled.explicit()) {
+            ObjectMapper mergeWithObject = (ObjectMapper)mergeWith;
+            if(mergeWithObject.enabled.explicit() == false) {
+                return mergeWithObject;
+            }
         }
         if (mergeWith instanceof NestedObjectMapper) {
             // TODO stop NestedObjectMapper extending ObjectMapper?
@@ -385,7 +377,7 @@ public class ObjectMapper extends Mapper implements Cloneable {
                 merged = mergeWithMapper;
             } else if (mergeIntoMapper instanceof ObjectMapper) {
                 ObjectMapper objectMapper = (ObjectMapper) mergeIntoMapper;
-                merged = objectMapper.mergeInObject(mergeWithMapper, reason);
+                merged = objectMapper.merge(mergeWithMapper, reason);
             } else {
                 assert mergeIntoMapper instanceof FieldMapper || mergeIntoMapper instanceof FieldAliasMapper;
                 if (mergeWithMapper instanceof ObjectMapper) {
