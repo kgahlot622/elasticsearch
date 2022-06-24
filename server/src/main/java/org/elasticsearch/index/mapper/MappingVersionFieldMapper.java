@@ -14,13 +14,11 @@ import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.Version;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.fielddata.IndexNumericFieldData.NumericType;
 import org.elasticsearch.index.fielddata.plain.SortedNumericIndexFieldData;
 import org.elasticsearch.index.query.SearchExecutionContext;
-import org.elasticsearch.index.seqno.SequenceNumbers;
 import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.io.IOException;
@@ -28,6 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Supplier;
+
+import static org.elasticsearch.index.mapper.SeqNoFieldMapper.TOMBSTONE_NAME;
 
 /**
  * Mapper for the {@code _seq_no} field.
@@ -43,70 +43,60 @@ import java.util.function.Supplier;
  * as a key-value lookup.
 
  */
-public class MappingVersionMapper extends MetadataFieldMapper {
+public class MappingVersionFieldMapper extends MetadataFieldMapper {
 
     /**
      * A sequence ID, which is made up of a sequence number (both the searchable
      * and doc_value version of the field) and the primary term.
      */
-//    public static class SequenceIDFields {
-//
-//        public final Field seqNo;
-//        public final Field seqNoDocValue;
-//        public final Field primaryTerm;
-//        public final Field tombstoneField;
-//
-//        private SequenceIDFields(Field seqNo, Field seqNoDocValue, Field primaryTerm, Field tombstoneField) {
-//            Objects.requireNonNull(seqNo, "sequence number field cannot be null");
-//            Objects.requireNonNull(seqNoDocValue, "sequence number dv field cannot be null");
-//            Objects.requireNonNull(primaryTerm, "primary term field cannot be null");
-//            this.seqNo = seqNo;
-//            this.seqNoDocValue = seqNoDocValue;
-//            this.primaryTerm = primaryTerm;
-//            this.tombstoneField = tombstoneField;
-//        }
-//
-//        public void addFields(LuceneDocument document) {
-//            document.add(seqNo);
-//            document.add(seqNoDocValue);
-//            document.add(primaryTerm);
-//            if (tombstoneField != null) {
-//                document.add(tombstoneField);
-//            }
-//        }
-//
-//        public static SequenceIDFields emptySeqID() {
-//            return new SequenceIDFields(
-//                new LongPoint(NAME, SequenceNumbers.UNASSIGNED_SEQ_NO),
-//                new NumericDocValuesField(NAME, SequenceNumbers.UNASSIGNED_SEQ_NO),
-//                new NumericDocValuesField(PRIMARY_TERM_NAME, 0),
-//                null
-//            );
-//        }
-//
-//        public static SequenceIDFields tombstone() {
-//            return new SequenceIDFields(
-//                new LongPoint(NAME, SequenceNumbers.UNASSIGNED_SEQ_NO),
-//                new NumericDocValuesField(NAME, SequenceNumbers.UNASSIGNED_SEQ_NO),
-//                new NumericDocValuesField(PRIMARY_TERM_NAME, 0),
-//                new NumericDocValuesField(TOMBSTONE_NAME, 1)
-//            );
-//        }
-//    }
+    public static class MappingVersionFields {
+
+        public final Field mappingVersion;
+        public final Field tombstoneField;
+
+        private MappingVersionFields(Field mappingVersion, Field tombstoneField) {
+            Objects.requireNonNull(mappingVersion, "sequence number field cannot be null");
+            this.mappingVersion = mappingVersion;
+            this.tombstoneField = tombstoneField;
+        }
+
+        public void addFields(LuceneDocument document) {
+            document.add(mappingVersion);
+            if (tombstoneField != null) {
+                document.add(tombstoneField);
+            }
+        }
+
+        public static MappingVersionFields emptyMappingVersion() {
+            return new MappingVersionFields(
+                new LongPoint(NAME, 0),
+                null
+            );
+        }
+
+        public static MappingVersionFields tombstone() {
+            return new MappingVersionFields(
+                new LongPoint(NAME, 0),
+                new NumericDocValuesField(TOMBSTONE_NAME, 1)
+            );
+        }
+    }
 
     public static final String NAME = "_mappingVersion";
     public static final String CONTENT_TYPE = "_mappingVersion";
 //    public static final String TOMBSTONE_NAME = "_tombstone";
 
-    public static final MappingVersionMapper INSTANCE = new MappingVersionMapper();
+    public static final MappingVersionFieldMapper INSTANCE = new MappingVersionFieldMapper();
 
     public static final TypeParser PARSER = new FixedTypeParser(c -> INSTANCE);
 
-    static final class SeqNoFieldType extends SimpleMappedFieldType {
+    /**consider extends again*/
+    static final class MappingVersionFieldType extends SimpleMappedFieldType {
 
-        private static final SeqNoFieldType INSTANCE = new SeqNoFieldType();
+        private static final MappingVersionFieldType INSTANCE = new MappingVersionFieldType();
 
-        private SeqNoFieldType() {
+        /**consider text search info*/
+        private MappingVersionFieldType() {
             super(NAME, true, false, true, TextSearchInfo.SIMPLE_MATCH_WITHOUT_TERMS, Collections.emptyMap());
         }
 
@@ -132,6 +122,7 @@ public class MappingVersionMapper extends MetadataFieldMapper {
             return Long.parseLong(value.toString());
         }
 
+        /**see value fetcher*/
         @Override
         public ValueFetcher valueFetcher(SearchExecutionContext context, String format) {
             throw new UnsupportedOperationException("Cannot fetch values for internal field [" + name() + "].");
@@ -187,8 +178,8 @@ public class MappingVersionMapper extends MetadataFieldMapper {
         }
     }
 
-    private MappingVersionMapper() {
-        super(SeqNoFieldType.INSTANCE);
+    private MappingVersionFieldMapper() {
+        super(MappingVersionFieldType.INSTANCE);
     }
 
     @Override
@@ -196,30 +187,21 @@ public class MappingVersionMapper extends MetadataFieldMapper {
         // see InternalEngine.innerIndex to see where the real version value is set
         // also see ParsedDocument.updateSeqID (called by innerIndex)
         //SequenceIDFields seqID = SequenceIDFields.emptySeqID();
+        MappingVersionFields mappingVersion = MappingVersionFields.emptyMappingVersion();
         /**see what to add here*/
         context.mappingVersion(mappingVersion);
-        //seqID.addFields(context.doc());
-        context.doc().add(mappingVersion);
+        mappingVersion.addFields(context.doc());
+        //context.doc().add((IndexableField) mappingVersion);
     }
 
     @Override
     public void postParse(DocumentParserContext context) throws IOException {
-        // In the case of nested docs, let's fill nested docs with the original
-        // so that Lucene doesn't write a Bitset for documents that
-        // don't have the field. This is consistent with the default value
-        // for efficiency.
-        // we share the parent docs fields to ensure good compression
-        Field mappingVersion = context.mappingVersion();
+        /**consider again*/
+        MappingVersionFields mappingVersion = context.mappingVersion();
         assert mappingVersion != null;
-        final Version versionCreated = context.indexSettings().getIndexVersionCreated();
-        final boolean includePrimaryTerm = versionCreated.before(Version.V_6_1_0);
         for (LuceneDocument doc : context.nonRootDocuments()) {
-            doc.add(seqID.seqNo);
-            doc.add(seqID.seqNoDocValue);
-            if (includePrimaryTerm) {
-                // primary terms are used to distinguish between parent and nested docs since 6.1.0
-                doc.add(seqID.primaryTerm);
-            }
+            doc.add(mappingVersion.mappingVersion);
+
         }
     }
 

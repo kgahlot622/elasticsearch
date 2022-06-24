@@ -417,7 +417,7 @@ public abstract class EngineTestCase extends ESTestCase {
             seqID,
             id,
             "test",
-            routing,
+                mappingVersion, routing,
             Arrays.asList(document),
             source,
             XContentType.JSON,

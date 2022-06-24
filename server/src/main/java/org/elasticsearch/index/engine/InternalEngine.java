@@ -1236,6 +1236,7 @@ public class InternalEngine extends Engine {
          */
         index.parsedDoc().updateSeqID(index.seqNo(), index.primaryTerm());
         index.parsedDoc().version().setLongValue(plan.versionForIndexing);
+        index.parsedDoc().updateMappingVersion(this.translog.indexSettings().getIndexMetadata().getMappingVersion());
         try {
             if (plan.addStaleOpToLucene) {
                 addStaleDocs(index.docs(), indexWriter);

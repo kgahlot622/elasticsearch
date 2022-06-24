@@ -5907,7 +5907,7 @@ public class InternalEngineTests extends EngineTestCase {
                 seqID,
                 id,
                 type,
-                "routing",
+                    mappingVersion, "routing",
                 Collections.singletonList(document),
                 source,
                 XContentType.JSON,

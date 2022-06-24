@@ -482,7 +482,7 @@ public class RecoverySourceHandlerTests extends ESTestCase {
             seqID,
             id,
             type,
-            null,
+                mappingVersion, null,
             Arrays.asList(document),
             source,
             XContentType.JSON,

@@ -541,7 +541,7 @@ public class RefreshListenersTests extends ESTestCase {
             seqID,
             id,
             "test",
-            null,
+                mappingVersion, null,
             Arrays.asList(document),
             source,
             XContentType.JSON,
