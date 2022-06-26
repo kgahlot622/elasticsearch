@@ -1,11 +1,3 @@
-/*
- * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License
- * 2.0 and the Server Side Public License, v 1; you may not use this file except
- * in compliance with, at your election, the Elastic License 2.0 or the Server
- * Side Public License, v 1.
- */
-
 package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.document.Field;
@@ -28,41 +20,22 @@ import java.util.function.Supplier;
 
 
 /**
- * Mapper for the {@code _seq_no} field.
- *
- * We expect to use the seq# for sorting, during collision checking and for
- * doing range searches. Therefore the {@code _seq_no} field is stored both
- * as a numeric doc value and as numeric indexed field.
- *
- * This mapper also manages the primary term field, which has no ES named
- * equivalent. The primary term is only used during collision after receiving
- * identical seq# values for two document copies. The primary term is stored as
- * a doc value field without being indexed, since it is only intended for use
- * as a key-value lookup.
-
+ * Mapper for the {@code _mapperVersion} field.
  */
+
 public class MappingVersionFieldMapper extends MetadataFieldMapper {
 
-    /**
-     * A sequence ID, which is made up of a sequence number (both the searchable
-     * and doc_value version of the field) and the primary term.
-     */
     public static class MappingVersionFields {
 
         public final Field mappingVersion;
-        //public final Field tombstoneField;
 
         private MappingVersionFields(Field mappingVersion) {
             Objects.requireNonNull(mappingVersion, "sequence number field cannot be null");
             this.mappingVersion = mappingVersion;
-            //this.tombstoneField = tombstoneField;
         }
 
         public void addFields(LuceneDocument document) {
             document.add(mappingVersion);
-//            if (tombstoneField != null) {
-//                document.add(tombstoneField);
-//            }
         }
 
         public static MappingVersionFields emptyMappingVersion() {
@@ -80,18 +53,15 @@ public class MappingVersionFieldMapper extends MetadataFieldMapper {
 
     public static final String NAME = "_mappingVersion";
     public static final String CONTENT_TYPE = "_mappingVersion";
-//    public static final String TOMBSTONE_NAME = "_tombstone";
 
     public static final MappingVersionFieldMapper INSTANCE = new MappingVersionFieldMapper();
 
     public static final TypeParser PARSER = new FixedTypeParser(c -> INSTANCE);
 
-    /**consider extends again*/
     static final class MappingVersionFieldType extends SimpleMappedFieldType {
 
         private static final MappingVersionFieldType INSTANCE = new MappingVersionFieldType();
 
-        /**consider text search info*/
         private MappingVersionFieldType() {
             super(NAME, true, false, true, TextSearchInfo.SIMPLE_MATCH_WITHOUT_TERMS, Collections.emptyMap());
         }
@@ -118,7 +88,6 @@ public class MappingVersionFieldMapper extends MetadataFieldMapper {
             return Long.parseLong(value.toString());
         }
 
-        /**see value fetcher*/
         @Override
         public ValueFetcher valueFetcher(SearchExecutionContext context, String format) {
             throw new UnsupportedOperationException("Cannot fetch values for internal field [" + name() + "].");
@@ -180,19 +149,13 @@ public class MappingVersionFieldMapper extends MetadataFieldMapper {
 
     @Override
     public void preParse(DocumentParserContext context) {
-        // see InternalEngine.innerIndex to see where the real version value is set
-        // also see ParsedDocument.updateSeqID (called by innerIndex)
-        //SequenceIDFields seqID = SequenceIDFields.emptySeqID();
         MappingVersionFields mappingVersion = MappingVersionFields.emptyMappingVersion();
-        /**see what to add here*/
         context.mappingVersion(mappingVersion);
         mappingVersion.addFields(context.doc());
-        //context.doc().add((IndexableField) mappingVersion);
     }
 
     @Override
     public void postParse(DocumentParserContext context) throws IOException {
-        /**consider again*/
         MappingVersionFields mappingVersion = context.mappingVersion();
         assert mappingVersion != null;
         for (LuceneDocument doc : context.nonRootDocuments()) {
