@@ -10,7 +10,6 @@ package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.LongPoint;
-import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
@@ -27,7 +26,6 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static org.elasticsearch.index.mapper.SeqNoFieldMapper.TOMBSTONE_NAME;
 
 /**
  * Mapper for the {@code _seq_no} field.
@@ -52,32 +50,30 @@ public class MappingVersionFieldMapper extends MetadataFieldMapper {
     public static class MappingVersionFields {
 
         public final Field mappingVersion;
-        public final Field tombstoneField;
+        //public final Field tombstoneField;
 
-        private MappingVersionFields(Field mappingVersion, Field tombstoneField) {
+        private MappingVersionFields(Field mappingVersion) {
             Objects.requireNonNull(mappingVersion, "sequence number field cannot be null");
             this.mappingVersion = mappingVersion;
-            this.tombstoneField = tombstoneField;
+            //this.tombstoneField = tombstoneField;
         }
 
         public void addFields(LuceneDocument document) {
             document.add(mappingVersion);
-            if (tombstoneField != null) {
-                document.add(tombstoneField);
-            }
+//            if (tombstoneField != null) {
+//                document.add(tombstoneField);
+//            }
         }
 
         public static MappingVersionFields emptyMappingVersion() {
             return new MappingVersionFields(
-                new LongPoint(NAME, 0),
-                null
+                new LongPoint(NAME, 0)
             );
         }
 
         public static MappingVersionFields tombstone() {
             return new MappingVersionFields(
-                new LongPoint(NAME, 0),
-                new NumericDocValuesField(TOMBSTONE_NAME, 1)
+                new LongPoint(NAME, 0)
             );
         }
     }
