@@ -85,14 +85,16 @@ public final class VersionsAndSeqNoResolver {
         public final long version;
         public final long seqNo;
         public final long primaryTerm;
+        public final long mappingVersion;
         public final LeafReader reader;
         public final int docBase;
 
-        public DocIdAndVersion(int docId, long version, long seqNo, long primaryTerm, LeafReader reader, int docBase) {
+        public DocIdAndVersion(int docId, long version, long seqNo, long primaryTerm, long mappingVersion, LeafReader reader, int docBase) {
             this.docId = docId;
             this.version = version;
             this.seqNo = seqNo;
             this.primaryTerm = primaryTerm;
+            this.mappingVersion = mappingVersion;
             this.reader = reader;
             this.docBase = docBase;
         }

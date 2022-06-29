@@ -96,6 +96,13 @@ public class GetResponse extends ActionResponse implements Iterable<DocumentFiel
     }
 
     /**
+     * The mapping version of the last mapping update on this document, if found.
+     */
+    public long getMappingVersion(){
+        return getResult.getMappingVersion();
+    }
+
+    /**
      * The source of the document if exists.
      */
     public byte[] getSourceAsBytes() {

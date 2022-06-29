@@ -138,6 +138,7 @@ public class ParsedDocument {
     }
     public void updateMappingVersion(long mappingVersion) {
         this.mappingVersion.mappingVersion.setLongValue(mappingVersion);
+        this.mappingVersion.mappingVersionDocValue.setLongValue(mappingVersion);
     }
 
     public String routing() {
