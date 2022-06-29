@@ -161,7 +161,7 @@ public class MetadataMappingService {
                 CompressedXContent existingSource = null;
                 DocumentMapper existingMapper = mapperService.documentMapper(typeForUpdate);
                 if (existingMapper != null) {
-                    existingSource = existingMapper.mappingSource();
+                     existingSource = existingMapper.mappingSource();
                 }
                 DocumentMapper mergedMapper = mapperService.merge(typeForUpdate, mappingUpdateSource, MergeReason.MAPPING_UPDATE);
                 CompressedXContent updatedSource = mergedMapper.mappingSource();
@@ -196,7 +196,8 @@ public class MetadataMappingService {
                     mapperService.documentMapper(MapperService.DEFAULT_MAPPING)
                 )) {
                     if (mapper != null) {
-                        indexMetadataBuilder.putMapping(new MappingMetadata(mapper.mappingSource()));
+                        indexMetadataBuilder.putMapping(new MappingMetadata(mapper.mappingSource(),
+                            indexMetadataBuilder.mappingVersion()+1));
                     }
                 }
                 if (updatedMapping) {

@@ -30,6 +30,7 @@ import static org.elasticsearch.rest.BaseRestHandler.DEFAULT_INCLUDE_TYPE_NAME_P
 public class GetMappingsResponse extends ActionResponse implements ToXContentFragment {
 
     private static final ParseField MAPPINGS = new ParseField("mappings");
+    private static final ParseField MAPPING_METADATA = new ParseField("mapping_metadata");
 
     private ImmutableOpenMap<String, ImmutableOpenMap<String, MappingMetadata>> mappings = ImmutableOpenMap.of();
 
@@ -124,12 +125,19 @@ public class GetMappingsResponse extends ActionResponse implements ToXContentFra
                         builder.startObject(MAPPINGS.getPreferredName()).endObject();
                     } else {
                         builder.field(MAPPINGS.getPreferredName(), mappings.sourceAsMap());
+                        Map<String, Object> mappingVersionMap = mappings.mappingVersionAsMap();
+                        if( mappingVersionMap.size() != 0)
+                            builder.field(MAPPING_METADATA.getPreferredName(), mappingVersionMap);
                     }
                 } else {
                     builder.startObject(MAPPINGS.getPreferredName());
                     {
                         for (final ObjectObjectCursor<String, MappingMetadata> typeEntry : indexEntry.value) {
                             builder.field(typeEntry.key, typeEntry.value.sourceAsMap());
+                            //todo : reconsider, see what it does
+                            Map<String, Object> mappingVersionMap = typeEntry.value.mappingVersionAsMap();
+                            if( mappingVersionMap.size() != 0)
+                                builder.field(typeEntry.key, mappingVersionMap);
                         }
                     }
                     builder.endObject();

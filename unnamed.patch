@@ -1,0 +1,260 @@
+Index: server/src/main/java/org/elasticsearch/common/lucene/uid/VersionsAndSeqNoResolver.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/server/src/main/java/org/elasticsearch/common/lucene/uid/VersionsAndSeqNoResolver.java b/server/src/main/java/org/elasticsearch/common/lucene/uid/VersionsAndSeqNoResolver.java
+--- a/server/src/main/java/org/elasticsearch/common/lucene/uid/VersionsAndSeqNoResolver.java	(revision 52b842b62ab00cb962d11e1d52632235fbd3329b)
++++ b/server/src/main/java/org/elasticsearch/common/lucene/uid/VersionsAndSeqNoResolver.java	(date 1656326314246)
+@@ -85,14 +85,16 @@
+         public final long version;
+         public final long seqNo;
+         public final long primaryTerm;
++        public final long mappingVersion;
+         public final LeafReader reader;
+         public final int docBase;
+ 
+-        public DocIdAndVersion(int docId, long version, long seqNo, long primaryTerm, LeafReader reader, int docBase) {
++        public DocIdAndVersion(int docId, long version, long seqNo, long primaryTerm, long mappingVersion, LeafReader reader, int docBase) {
+             this.docId = docId;
+             this.version = version;
+             this.seqNo = seqNo;
+             this.primaryTerm = primaryTerm;
++            this.mappingVersion = mappingVersion;
+             this.reader = reader;
+             this.docBase = docBase;
+         }
+@@ -102,11 +104,13 @@
+     public static class DocIdAndSeqNo {
+         public final int docId;
+         public final long seqNo;
++        public final long mappingVersion;
+         public final LeafReaderContext context;
+ 
+-        DocIdAndSeqNo(int docId, long seqNo, LeafReaderContext context) {
++        DocIdAndSeqNo(int docId, long seqNo, long mappingVersion, LeafReaderContext context) {
+             this.docId = docId;
+             this.seqNo = seqNo;
++            this.mappingVersion = mappingVersion;
+             this.context = context;
+         }
+     }
+@@ -117,7 +121,8 @@
+      * <li>a doc ID and a version otherwise
+      * </ul>
+      */
+-    public static DocIdAndVersion loadDocIdAndVersion(IndexReader reader, Term term, boolean loadSeqNo) throws IOException {
++    public static DocIdAndVersion loadDocIdAndVersion(
++        IndexReader reader, Term term, boolean loadSeqNo, boolean loadMappingVersion) throws IOException {
+         PerThreadIDVersionAndSeqNoLookup[] lookups = getLookupState(reader, term.field());
+         List<LeafReaderContext> leaves = reader.leaves();
+         // iterate backwards to optimize for the frequently updated documents
+@@ -125,7 +130,7 @@
+         for (int i = leaves.size() - 1; i >= 0; i--) {
+             final LeafReaderContext leaf = leaves.get(i);
+             PerThreadIDVersionAndSeqNoLookup lookup = lookups[leaf.ord];
+-            DocIdAndVersion result = lookup.lookupVersion(term.bytes(), loadSeqNo, leaf);
++            DocIdAndVersion result = lookup.lookupVersion(term.bytes(), loadSeqNo, loadMappingVersion, leaf);
+             if (result != null) {
+                 return result;
+             }
+@@ -133,12 +138,13 @@
+         return null;
+     }
+ 
+-    public static DocIdAndVersion loadDocIdAndVersionUncached(IndexReader reader, Term term, boolean loadSeqNo) throws IOException {
++    public static DocIdAndVersion loadDocIdAndVersionUncached(
++        IndexReader reader, Term term, boolean loadSeqNo, boolean loadMappingVersion) throws IOException {
+         List<LeafReaderContext> leaves = reader.leaves();
+         for (int i = leaves.size() - 1; i >= 0; i--) {
+             final LeafReaderContext leaf = leaves.get(i);
+             PerThreadIDVersionAndSeqNoLookup lookup = new PerThreadIDVersionAndSeqNoLookup(leaf.reader(), term.field(), false);
+-            DocIdAndVersion result = lookup.lookupVersion(term.bytes(), loadSeqNo, leaf);
++            DocIdAndVersion result = lookup.lookupVersion(term.bytes(), loadSeqNo, loadMappingVersion, leaf);
+             if (result != null) {
+                 return result;
+             }
+Index: server/src/main/java/org/elasticsearch/index/get/GetResult.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/server/src/main/java/org/elasticsearch/index/get/GetResult.java b/server/src/main/java/org/elasticsearch/index/get/GetResult.java
+--- a/server/src/main/java/org/elasticsearch/index/get/GetResult.java	(revision 52b842b62ab00cb962d11e1d52632235fbd3329b)
++++ b/server/src/main/java/org/elasticsearch/index/get/GetResult.java	(date 1656318445939)
+@@ -46,6 +46,8 @@
+     private static final String _VERSION = "_version";
+     private static final String _SEQ_NO = "_seq_no";
+     private static final String _PRIMARY_TERM = "_primary_term";
++
++    private static final String _MAPPING_VERSION = "_mappingVersion";
+     private static final String FOUND = "found";
+     private static final String FIELDS = "fields";
+ 
+@@ -55,6 +57,7 @@
+     private long version;
+     private long seqNo;
+     private long primaryTerm;
++    private long mappingVersion;
+     private boolean exists;
+     private final Map<String, DocumentField> documentFields;
+     private final Map<String, DocumentField> metaFields;
+@@ -106,6 +109,7 @@
+         String id,
+         long seqNo,
+         long primaryTerm,
++        long mappingVersion,
+         long version,
+         boolean exists,
+         BytesReference source,
+@@ -117,6 +121,7 @@
+         this.id = id;
+         this.seqNo = seqNo;
+         this.primaryTerm = primaryTerm;
++        this.mappingVersion = mappingVersion;
+         assert (seqNo == UNASSIGNED_SEQ_NO && primaryTerm == UNASSIGNED_PRIMARY_TERM) || (seqNo >= 0 && primaryTerm >= 1)
+             : "seqNo: " + seqNo + " primaryTerm: " + primaryTerm;
+         assert exists || (seqNo == UNASSIGNED_SEQ_NO && primaryTerm == UNASSIGNED_PRIMARY_TERM)
+@@ -176,6 +181,10 @@
+     public long getPrimaryTerm() {
+         return primaryTerm;
+     }
++    /**
++     * The mapping version of the last mapping update on this document, if found.
++     */
++    public long getMappingVersion(){return mappingVersion; }
+ 
+     /**
+      * The source of the document if exists.
+@@ -286,7 +295,10 @@
+             builder.field(_SEQ_NO, seqNo);
+             builder.field(_PRIMARY_TERM, primaryTerm);
+         }
+-
++        // TODO: should we check for something here
++        if(mappingVersion != 0) {
++            builder.field(_MAPPING_VERSION, mappingVersion);
++        }
+         for (DocumentField field : metaFields.values()) {
+             // TODO: can we avoid having an exception here?
+             if (field.getName().equals(IgnoredFieldMapper.NAME)) {
+@@ -344,6 +356,7 @@
+         long version = -1;
+         long seqNo = UNASSIGNED_SEQ_NO;
+         long primaryTerm = UNASSIGNED_PRIMARY_TERM;
++        long mappingVersion = 0;
+         Boolean found = null;
+         BytesReference source = null;
+         Map<String, DocumentField> documentFields = new HashMap<>();
+@@ -364,7 +377,9 @@
+                     seqNo = parser.longValue();
+                 } else if (_PRIMARY_TERM.equals(currentFieldName)) {
+                     primaryTerm = parser.longValue();
+-                } else if (FOUND.equals(currentFieldName)) {
++                } else if (_MAPPING_VERSION.equals(currentFieldName)) {
++                    mappingVersion = parser.longValue();
++                }else if (FOUND.equals(currentFieldName)) {
+                     found = parser.booleanValue();
+                 } else {
+                     metaFields.put(currentFieldName, new DocumentField(currentFieldName, Collections.singletonList(parser.objectText())));
+@@ -393,7 +408,7 @@
+                 }
+             }
+         }
+-        return new GetResult(index, type, id, seqNo, primaryTerm, version, found, source, documentFields, metaFields);
++        return new GetResult(index, type, id, seqNo, primaryTerm, mappingVersion, version, found, source, documentFields, metaFields);
+     }
+ 
+     public static GetResult fromXContent(XContentParser parser) throws IOException {
+@@ -463,6 +478,7 @@
+         return version == getResult.version
+             && seqNo == getResult.seqNo
+             && primaryTerm == getResult.primaryTerm
++            && mappingVersion == getResult.mappingVersion
+             && exists == getResult.exists
+             && Objects.equals(index, getResult.index)
+             && Objects.equals(type, getResult.type)
+@@ -474,7 +490,8 @@
+ 
+     @Override
+     public int hashCode() {
+-        return Objects.hash(version, seqNo, primaryTerm, exists, index, type, id, documentFields, metaFields, sourceAsMap());
++        return Objects.hash(version, seqNo, primaryTerm, mappingVersion,
++            exists, index, type, id, documentFields, metaFields, sourceAsMap());
+     }
+ 
+     @Override
+Index: server/src/main/java/org/elasticsearch/index/get/ShardGetService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/server/src/main/java/org/elasticsearch/index/get/ShardGetService.java b/server/src/main/java/org/elasticsearch/index/get/ShardGetService.java
+--- a/server/src/main/java/org/elasticsearch/index/get/ShardGetService.java	(revision 52b842b62ab00cb962d11e1d52632235fbd3329b)
++++ b/server/src/main/java/org/elasticsearch/index/get/ShardGetService.java	(date 1656326314239)
+@@ -81,7 +81,7 @@
+         VersionType versionType,
+         FetchSourceContext fetchSourceContext
+     ) {
+-        return get(type, id, gFields, realtime, version, versionType, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, fetchSourceContext);
++        return get(type, id, gFields, realtime, version, versionType, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, 0, fetchSourceContext);
+     }
+ 
+     private GetResult get(
+@@ -93,12 +93,13 @@
+         VersionType versionType,
+         long ifSeqNo,
+         long ifPrimaryTerm,
++        long mappingVersion,
+         FetchSourceContext fetchSourceContext
+     ) {
+         currentMetric.inc();
+         try {
+             long now = System.nanoTime();
+-            GetResult getResult = innerGet(type, id, gFields, realtime, version, versionType, ifSeqNo, ifPrimaryTerm, fetchSourceContext);
++            GetResult getResult = innerGet(type, id, gFields, realtime, version, versionType, ifSeqNo, ifPrimaryTerm, mappingVersion, fetchSourceContext);
+ 
+             if (getResult.isExists()) {
+                 existsMetric.inc(System.nanoTime() - now);
+@@ -134,7 +135,7 @@
+      */
+     public GetResult get(Engine.GetResult engineGetResult, String id, String type, String[] fields, FetchSourceContext fetchSourceContext) {
+         if (engineGetResult.exists() == false) {
+-            return new GetResult(shardId.getIndexName(), type, id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, -1, false, null, null, null);
++            return new GetResult(shardId.getIndexName(), type, id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, 0, -1, false, null, null, null);
+         }
+ 
+         currentMetric.inc();
+@@ -180,6 +181,7 @@
+         VersionType versionType,
+         long ifSeqNo,
+         long ifPrimaryTerm,
++        long mappingVersion,
+         FetchSourceContext fetchSourceContext
+     ) {
+         fetchSourceContext = normalizeFetchSourceContent(fetchSourceContext, gFields);
+@@ -196,6 +198,7 @@
+                     .versionType(versionType)
+                     .setIfSeqNo(ifSeqNo)
+                     .setIfPrimaryTerm(ifPrimaryTerm)
++                    .setMappingVersion(mappingVersion)
+             );
+             if (get.exists() == false) {
+                 get.close();
+@@ -203,7 +206,7 @@
+         }
+ 
+         if (get == null || get.exists() == false) {
+-            return new GetResult(shardId.getIndexName(), type, id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, -1, false, null, null, null);
++            return new GetResult(shardId.getIndexName(), type, id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, 0, -1, false, null, null, null);
+         }
+ 
+         try {
+@@ -310,6 +313,7 @@
+             id,
+             get.docIdAndVersion().seqNo,
+             get.docIdAndVersion().primaryTerm,
++            get.docIdAndVersion().mappingVersion,
+             get.version(),
+             get.exists(),
+             source,
