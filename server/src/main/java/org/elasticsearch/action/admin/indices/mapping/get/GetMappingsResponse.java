@@ -123,6 +123,7 @@ public class GetMappingsResponse extends ActionResponse implements ToXContentFra
                     if (mappings == null) {
                         // no mappings yet
                         builder.startObject(MAPPINGS.getPreferredName()).endObject();
+                        builder.startObject(MAPPING_METADATA.getPreferredName()).endObject();
                     } else {
                         builder.field(MAPPINGS.getPreferredName(), mappings.sourceAsMap());
                         Map<String, Object> mappingVersionMap = mappings.mappingVersionAsMap();
@@ -134,7 +135,12 @@ public class GetMappingsResponse extends ActionResponse implements ToXContentFra
                     {
                         for (final ObjectObjectCursor<String, MappingMetadata> typeEntry : indexEntry.value) {
                             builder.field(typeEntry.key, typeEntry.value.sourceAsMap());
-                            //todo : reconsider, see what it does
+                        }
+                    }
+                    builder.endObject();
+                    builder.startObject(MAPPING_METADATA.getPreferredName());
+                    {
+                        for (final ObjectObjectCursor<String, MappingMetadata> typeEntry : indexEntry.value) {
                             Map<String, Object> mappingVersionMap = typeEntry.value.mappingVersionAsMap();
                             if( mappingVersionMap.size() != 0)
                                 builder.field(typeEntry.key, mappingVersionMap);

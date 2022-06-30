@@ -111,6 +111,19 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     }
 
     @SuppressWarnings("unchecked")
+    public MappingMetadata(String type, Map<String, Object> mapping, Long mappingVersion) throws IOException {
+        this.type = type;
+        this.source = new CompressedXContent((builder, params) -> builder.mapContents(mapping), XContentType.JSON, ToXContent.EMPTY_PARAMS);
+        this.mappingVersion = mappingVersion;
+        Map<String, Object> withoutType = mapping;
+        if (mapping.size() == 1 && mapping.containsKey(type)) {
+            withoutType = (Map<String, Object>) mapping.get(type);
+        }
+        initMappers(withoutType);
+    }
+
+
+    @SuppressWarnings("unchecked")
     private void initMappers(Map<String, Object> withoutType) {
         if (withoutType.containsKey("_routing")) {
             boolean required = false;
@@ -195,8 +208,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(type());
         source().writeTo(out);
-        //TODO : SEE IT
-        out.writeLong(mappingVersion());
+        //out.writeLong(mappingVersion());
         // routing
         out.writeBoolean(routing().required());
         if (out.getVersion().before(Version.V_6_0_0_alpha1)) {
@@ -237,8 +249,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public MappingMetadata(StreamInput in) throws IOException {
         type = in.readString();
         source = CompressedXContent.readCompressedString(in);
-        //TODO : check
-        mappingVersion = in.readLong();
+        //mappingVersion = in.readLong();
         // routing
         routing = new Routing(in.readBoolean());
         if (in.getVersion().before(Version.V_6_0_0_alpha1)) {
