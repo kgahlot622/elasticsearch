@@ -75,6 +75,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
             seqNo = UNASSIGNED_SEQ_NO;
             primaryTerm = UNASSIGNED_PRIMARY_TERM;
         }
+        mappingVersion = in.readZLong();
         version = in.readLong();
         exists = in.readBoolean();
         if (exists) {
@@ -438,7 +439,6 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
                 }
             }
         }
-        //TODO : Only keep if this method is required
         if(mappingVersion != 0)
             return new GetResult(index, type, id, seqNo, primaryTerm, mappingVersion, version, found, source, documentFields, metaFields);
 
@@ -476,8 +476,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
             out.writeZLong(seqNo);
             out.writeVLong(primaryTerm);
         }
-        //TODO : RECHECK
-       // out.writeVLong(mappingVersion);
+        out.writeZLong(mappingVersion);
         out.writeLong(version);
         out.writeBoolean(exists);
         if (exists) {
