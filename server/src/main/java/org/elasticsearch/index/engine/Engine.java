@@ -484,10 +484,16 @@ public abstract class Engine implements Closeable {
 
     public static class IndexResult extends Result {
 
+        private long mappingVersion;
         private final boolean created;
 
         public IndexResult(long version, long term, long seqNo, boolean created) {
             super(Operation.TYPE.INDEX, version, term, seqNo);
+            this.created = created;
+        }
+        public IndexResult(long version, long term, long seqNo, long mappingVersion, boolean created) {
+            super(Operation.TYPE.INDEX, version, term, seqNo);
+            this.mappingVersion = mappingVersion;
             this.created = created;
         }
 
@@ -502,12 +508,19 @@ public abstract class Engine implements Closeable {
             super(Operation.TYPE.INDEX, failure, version, term, seqNo);
             this.created = false;
         }
+        public IndexResult(Exception failure, long version, long term, long seqNo, long mappingVersion) {
+            super(Operation.TYPE.INDEX, failure, version, term, seqNo);
+            this.mappingVersion = mappingVersion;
+            this.created = false;
+        }
 
         public IndexResult(Mapping requiredMappingUpdate) {
             super(Operation.TYPE.INDEX, requiredMappingUpdate);
             this.created = false;
+            this.mappingVersion = 0;
         }
 
+        public long mappingVersion() { return mappingVersion; }
         public boolean isCreated() {
             return created;
         }
