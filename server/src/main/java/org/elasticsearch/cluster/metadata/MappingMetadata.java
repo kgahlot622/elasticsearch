@@ -208,7 +208,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(type());
         source().writeTo(out);
-        //out.writeLong(mappingVersion());
+        out.writeLong(mappingVersion());
         // routing
         out.writeBoolean(routing().required());
         if (out.getVersion().before(Version.V_6_0_0_alpha1)) {
@@ -242,6 +242,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public int hashCode() {
         int result = type.hashCode();
         result = 31 * result + source.hashCode();
+        result = 31 * result + mappingVersion.hashCode();
         result = 31 * result + routing.hashCode();
         return result;
     }
@@ -249,7 +250,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public MappingMetadata(StreamInput in) throws IOException {
         type = in.readString();
         source = CompressedXContent.readCompressedString(in);
-        //mappingVersion = in.readLong();
+        mappingVersion = in.readLong();
         // routing
         routing = new Routing(in.readBoolean());
         if (in.getVersion().before(Version.V_6_0_0_alpha1)) {
