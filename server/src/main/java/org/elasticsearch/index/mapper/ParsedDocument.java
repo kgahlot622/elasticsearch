@@ -28,7 +28,7 @@ public class ParsedDocument {
 
     private final String id, type;
     private final SeqNoFieldMapper.SequenceIDFields seqID;
-    private final MappingVersionFieldMapper.MappingVersionFields mappingVersion;
+    private MappingVersionFieldMapper.MappingVersionFields mappingVersion;
     private final String routing;
 
     private final List<LuceneDocument> documents;
@@ -100,6 +100,28 @@ public class ParsedDocument {
         SeqNoFieldMapper.SequenceIDFields seqID,
         String id,
         String type,
+        String routing,
+        List<LuceneDocument> documents,
+        BytesReference source,
+        XContentType xContentType,
+        Mapping dynamicMappingsUpdate
+    ) {
+        this.version = version;
+        this.seqID = seqID;
+        this.id = id;
+        this.type = type;
+        this.routing = routing;
+        this.documents = documents;
+        this.source = source;
+        this.dynamicMappingsUpdate = dynamicMappingsUpdate;
+        this.xContentType = xContentType;
+    }
+
+    public ParsedDocument(
+        Field version,
+        SeqNoFieldMapper.SequenceIDFields seqID,
+        String id,
+        String type,
         MappingVersionFieldMapper.MappingVersionFields mappingVersion,
         String routing,
         List<LuceneDocument> documents,
@@ -118,6 +140,7 @@ public class ParsedDocument {
         this.dynamicMappingsUpdate = dynamicMappingsUpdate;
         this.xContentType = xContentType;
     }
+
 
     public String id() {
         return this.id;

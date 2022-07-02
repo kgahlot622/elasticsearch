@@ -3453,7 +3453,7 @@ public class TranslogTests extends ESTestCase {
             seqID,
             "1",
             "type",
-                mappingVersion, null,
+            null,
             Arrays.asList(document),
             B_1,
             XContentType.JSON,
