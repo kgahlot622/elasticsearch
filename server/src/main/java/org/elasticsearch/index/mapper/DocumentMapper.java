@@ -35,6 +35,7 @@ public class DocumentMapper {
         this.mappingSource = mapping.toCompressedXContent();
     }
 
+    public DocumentParser documentParser() { return this.documentParser; }
     public Mapping mapping() {
         return mappingLookup.getMapping();
     }

@@ -45,6 +45,7 @@ import org.elasticsearch.index.fieldvisitor.FieldNamesProvidingStoredFieldsVisit
 import org.elasticsearch.index.mapper.DocumentParser;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.MappingLookup;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.RoutingFieldMapper;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
@@ -308,6 +309,9 @@ final class TranslogDirectoryReader extends DirectoryReader {
                 }
                 if (field.equals(SeqNoFieldMapper.PRIMARY_TERM_NAME)) {
                     return new FakeNumericDocValues(operation.primaryTerm());
+                }
+                if (field.equals(MappingVersionFieldMapper.NAME)) {
+                    return new FakeNumericDocValues(operation.mappingVersion());
                 }
             }
             return getDelegate().getNumericDocValues(field);

@@ -81,6 +81,7 @@ import org.elasticsearch.index.mapper.LuceneDocument;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.Mapping;
 import org.elasticsearch.index.mapper.MappingLookup;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.mapper.SourceFieldMapper;
@@ -400,11 +401,15 @@ public abstract class EngineTestCase extends ESTestCase {
         Field uidField = new Field("_id", Uid.encodeId(id), IdFieldMapper.Defaults.FIELD_TYPE);
         Field versionField = new NumericDocValuesField("_version", 0);
         SeqNoFieldMapper.SequenceIDFields seqID = SeqNoFieldMapper.SequenceIDFields.emptySeqID();
+        MappingVersionFieldMapper.MappingVersionFields mappingVersion =
+            MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion();
         document.add(uidField);
         document.add(versionField);
         document.add(seqID.seqNo);
         document.add(seqID.seqNoDocValue);
         document.add(seqID.primaryTerm);
+        document.add(mappingVersion.mappingVersion);
+        document.add(mappingVersion.mappingVersionDocValue);
         BytesRef ref = source.toBytesRef();
         if (recoverySource) {
             document.add(new StoredField(SourceFieldMapper.RECOVERY_SOURCE_NAME, ref.bytes, ref.offset, ref.length));
@@ -417,6 +422,7 @@ public abstract class EngineTestCase extends ESTestCase {
             seqID,
             id,
             "test",
+            mappingVersion,
             routing,
             Arrays.asList(document),
             source,

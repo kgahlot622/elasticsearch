@@ -50,6 +50,7 @@ import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.Engine.Operation.Origin;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.LuceneDocument;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.mapper.Uid;
@@ -3439,6 +3440,11 @@ public class TranslogTests extends ESTestCase {
         seqID.seqNo.setLongValue(randomSeqNum);
         seqID.seqNoDocValue.setLongValue(randomSeqNum);
         seqID.primaryTerm.setLongValue(randomPrimaryTerm);
+        MappingVersionFieldMapper.MappingVersionFields mappingVersion =
+            MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion();
+        long randomMappingVer = randomNonNegativeLong() + 1;
+        mappingVersion.mappingVersion.setLongValue(randomMappingVer);
+        mappingVersion.mappingVersionDocValue.setLongValue(randomMappingVer);
         Field idField = new Field("_id", Uid.encodeId("1"), IdFieldMapper.Defaults.FIELD_TYPE);
         Field versionField = new NumericDocValuesField("_version", 1);
         LuceneDocument document = new LuceneDocument();
@@ -3448,11 +3454,14 @@ public class TranslogTests extends ESTestCase {
         document.add(seqID.seqNo);
         document.add(seqID.seqNoDocValue);
         document.add(seqID.primaryTerm);
+        document.add(mappingVersion.mappingVersion);
+        document.add(mappingVersion.mappingVersionDocValue);
         ParsedDocument doc = new ParsedDocument(
             versionField,
             seqID,
             "1",
             "type",
+            mappingVersion,
             null,
             Arrays.asList(document),
             B_1,

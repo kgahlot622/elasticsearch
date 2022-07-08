@@ -55,6 +55,7 @@ import org.elasticsearch.index.engine.RecoveryEngineException;
 import org.elasticsearch.index.engine.SegmentsStats;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.LuceneDocument;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.mapper.Uid;
@@ -471,17 +472,22 @@ public class RecoverySourceHandlerTests extends ESTestCase {
         final Field idField = new Field("_id", Uid.encodeId(id), IdFieldMapper.Defaults.FIELD_TYPE);
         final Field versionField = new NumericDocValuesField("_version", Versions.MATCH_ANY);
         final SeqNoFieldMapper.SequenceIDFields seqID = SeqNoFieldMapper.SequenceIDFields.emptySeqID();
+        final MappingVersionFieldMapper.MappingVersionFields mappingVersion =
+            MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion();
         document.add(idField);
         document.add(versionField);
         document.add(seqID.seqNo);
         document.add(seqID.seqNoDocValue);
         document.add(seqID.primaryTerm);
+        document.add(mappingVersion.mappingVersion);
+        document.add(mappingVersion.mappingVersionDocValue);
         final BytesReference source = new BytesArray(new byte[] { 1 });
         final ParsedDocument doc = new ParsedDocument(
             versionField,
             seqID,
             id,
             type,
+            mappingVersion,
             null,
             Arrays.asList(document),
             source,

@@ -98,6 +98,7 @@ public abstract class DocumentParserContext {
     private final Map<String, ObjectMapper> dynamicObjectMappers;
     private final List<RuntimeField> dynamicRuntimeFields;
     private Field version;
+    private MappingVersionFieldMapper.MappingVersionFields mappingVersion;
     private SeqNoFieldMapper.SequenceIDFields seqID;
 
     private DocumentParserContext(DocumentParserContext in) {
@@ -112,6 +113,7 @@ public abstract class DocumentParserContext {
         this.dynamicObjectMappers = in.dynamicObjectMappers;
         this.dynamicRuntimeFields = in.dynamicRuntimeFields;
         this.version = in.version;
+        this.mappingVersion = in.mappingVersion;
         this.seqID = in.seqID;
     }
 
@@ -196,7 +198,12 @@ public abstract class DocumentParserContext {
     public final void version(Field version) {
         this.version = version;
     }
-
+    public final MappingVersionFieldMapper.MappingVersionFields mappingVersion() {
+        return this.mappingVersion;
+    }
+    public final void mappingVersion(MappingVersionFieldMapper.MappingVersionFields mappingVersion) {
+        this.mappingVersion = mappingVersion;
+    }
     public final SeqNoFieldMapper.SequenceIDFields seqID() {
         return this.seqID;
     }

@@ -46,6 +46,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
     private static final String _VERSION = "_version";
     private static final String _SEQ_NO = "_seq_no";
     private static final String _PRIMARY_TERM = "_primary_term";
+    private static final String _MAPPING_VERSION = "_mapping_version";
     private static final String FOUND = "found";
     private static final String FIELDS = "fields";
 
@@ -55,6 +56,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
     private long version;
     private long seqNo;
     private long primaryTerm;
+    private long mappingVersion;
     private boolean exists;
     private final Map<String, DocumentField> documentFields;
     private final Map<String, DocumentField> metaFields;
@@ -73,6 +75,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
             seqNo = UNASSIGNED_SEQ_NO;
             primaryTerm = UNASSIGNED_PRIMARY_TERM;
         }
+        mappingVersion = in.readZLong();
         version = in.readLong();
         exists = in.readBoolean();
         if (exists) {
@@ -117,6 +120,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
         this.id = id;
         this.seqNo = seqNo;
         this.primaryTerm = primaryTerm;
+        this.mappingVersion = 0;
         assert (seqNo == UNASSIGNED_SEQ_NO && primaryTerm == UNASSIGNED_PRIMARY_TERM) || (seqNo >= 0 && primaryTerm >= 1)
             : "seqNo: " + seqNo + " primaryTerm: " + primaryTerm;
         assert exists || (seqNo == UNASSIGNED_SEQ_NO && primaryTerm == UNASSIGNED_PRIMARY_TERM)
@@ -128,6 +132,35 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
         this.metaFields = metaFields == null ? emptyMap() : metaFields;
     }
 
+    public GetResult(
+        String index,
+        String type,
+        String id,
+        long seqNo,
+        long primaryTerm,
+        long mappingVersion,
+        long version,
+        boolean exists,
+        BytesReference source,
+        Map<String, DocumentField> documentFields,
+        Map<String, DocumentField> metaFields
+    ) {
+        this.index = index;
+        this.type = type;
+        this.id = id;
+        this.seqNo = seqNo;
+        this.primaryTerm = primaryTerm;
+        this.mappingVersion = mappingVersion;
+        assert (seqNo == UNASSIGNED_SEQ_NO && primaryTerm == UNASSIGNED_PRIMARY_TERM) || (seqNo >= 0 && primaryTerm >= 1)
+            : "seqNo: " + seqNo + " primaryTerm: " + primaryTerm;
+        assert exists || (seqNo == UNASSIGNED_SEQ_NO && primaryTerm == UNASSIGNED_PRIMARY_TERM)
+            : "doc not found but seqNo/primaryTerm are set";
+        this.version = version;
+        this.exists = exists;
+        this.source = source;
+        this.documentFields = documentFields == null ? emptyMap() : documentFields;
+        this.metaFields = metaFields == null ? emptyMap() : metaFields;
+    }
     /**
      * Does the document exist.
      */
@@ -175,6 +208,13 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
      */
     public long getPrimaryTerm() {
         return primaryTerm;
+    }
+
+    /**
+     * The mapping version of the last mapping update on this document, if found.
+     */
+    public long getMappingVersion(){
+        return mappingVersion;
     }
 
     /**
@@ -286,6 +326,10 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
             builder.field(_SEQ_NO, seqNo);
             builder.field(_PRIMARY_TERM, primaryTerm);
         }
+        if(mappingVersion != 0){
+            builder.field(_MAPPING_VERSION, mappingVersion);
+        }
+
 
         for (DocumentField field : metaFields.values()) {
             // TODO: can we avoid having an exception here?
@@ -344,6 +388,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
         long version = -1;
         long seqNo = UNASSIGNED_SEQ_NO;
         long primaryTerm = UNASSIGNED_PRIMARY_TERM;
+        long mappingVersion = 0;
         Boolean found = null;
         BytesReference source = null;
         Map<String, DocumentField> documentFields = new HashMap<>();
@@ -364,7 +409,9 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
                     seqNo = parser.longValue();
                 } else if (_PRIMARY_TERM.equals(currentFieldName)) {
                     primaryTerm = parser.longValue();
-                } else if (FOUND.equals(currentFieldName)) {
+                } else if (_MAPPING_VERSION.equals(currentFieldName)) {
+                    mappingVersion = parser.longValue();
+                }else if (FOUND.equals(currentFieldName)) {
                     found = parser.booleanValue();
                 } else {
                     metaFields.put(currentFieldName, new DocumentField(currentFieldName, Collections.singletonList(parser.objectText())));
@@ -393,6 +440,9 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
                 }
             }
         }
+        if(mappingVersion != 0)
+            return new GetResult(index, type, id, seqNo, primaryTerm, mappingVersion, version, found, source, documentFields, metaFields);
+
         return new GetResult(index, type, id, seqNo, primaryTerm, version, found, source, documentFields, metaFields);
     }
 
@@ -427,6 +477,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
             out.writeZLong(seqNo);
             out.writeVLong(primaryTerm);
         }
+        out.writeZLong(mappingVersion);
         out.writeLong(version);
         out.writeBoolean(exists);
         if (exists) {
@@ -463,6 +514,7 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
         return version == getResult.version
             && seqNo == getResult.seqNo
             && primaryTerm == getResult.primaryTerm
+            && mappingVersion == getResult.mappingVersion
             && exists == getResult.exists
             && Objects.equals(index, getResult.index)
             && Objects.equals(type, getResult.type)
@@ -472,9 +524,11 @@ public class GetResult implements Writeable, Iterable<DocumentField>, ToXContent
             && Objects.equals(sourceAsMap(), getResult.sourceAsMap());
     }
 
+    //TODO: CHECK
     @Override
     public int hashCode() {
-        return Objects.hash(version, seqNo, primaryTerm, exists, index, type, id, documentFields, metaFields, sourceAsMap());
+        return Objects.hash(version, seqNo, primaryTerm, mappingVersion,
+            exists, index, type, id, documentFields, metaFields, sourceAsMap());
     }
 
     @Override

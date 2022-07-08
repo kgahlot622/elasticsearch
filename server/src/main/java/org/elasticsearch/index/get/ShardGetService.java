@@ -203,7 +203,8 @@ public final class ShardGetService extends AbstractIndexShardComponent {
         }
 
         if (get == null || get.exists() == false) {
-            return new GetResult(shardId.getIndexName(), type, id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, -1, false, null, null, null);
+            return new GetResult(shardId.getIndexName(), type, id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM,
+                0,-1, false, null, null, null);
         }
 
         try {
@@ -310,6 +311,7 @@ public final class ShardGetService extends AbstractIndexShardComponent {
             id,
             get.docIdAndVersion().seqNo,
             get.docIdAndVersion().primaryTerm,
+            get.docIdAndVersion().mappingVersion,
             get.version(),
             get.exists(),
             source,

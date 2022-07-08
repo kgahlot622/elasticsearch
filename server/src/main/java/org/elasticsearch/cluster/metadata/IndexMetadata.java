@@ -1264,7 +1264,8 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         }
 
         public Builder putMapping(String type, String source) throws IOException {
-            putMapping(new MappingMetadata(type, XContentHelper.convertToMap(XContentFactory.xContent(source), source, true)));
+            putMapping(new MappingMetadata(type,
+                XContentHelper.convertToMap(XContentFactory.xContent(source), source, true), this.mappingVersion));
             return this;
         }
 

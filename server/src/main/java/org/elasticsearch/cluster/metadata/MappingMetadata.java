@@ -22,6 +22,7 @@ import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.elasticsearch.common.xcontent.support.XContentMapValues.nodeBooleanValue;
@@ -65,11 +66,14 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
 
     private final CompressedXContent source;
 
+    private Long mappingVersion;
+
     private Routing routing;
 
     public MappingMetadata(DocumentMapper docMapper) {
         this.type = docMapper.type();
         this.source = docMapper.mappingSource();
+        this.mappingVersion = docMapper.documentParser().indexSettings().getIndexMetadata().getMappingVersion();
         this.routing = new Routing(docMapper.routingFieldMapper().required());
     }
 
@@ -81,6 +85,18 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
             throw new IllegalStateException("Can't derive type from mapping, no root type: " + mapping.string());
         }
         this.type = mappingMap.keySet().iterator().next();
+        this.mappingVersion = Long.valueOf(0);
+        initMappers((Map<String, Object>) mappingMap.get(this.type));
+    }
+    @SuppressWarnings("unchecked")
+    public MappingMetadata(CompressedXContent mapping, Long mappingVersion) {
+        this.source = mapping;
+        Map<String, Object> mappingMap = XContentHelper.convertToMap(mapping.compressedReference(), true).v2();
+        if (mappingMap.size() != 1) {
+            throw new IllegalStateException("Can't derive type from mapping, no root type: " + mapping.string());
+        }
+        this.type = mappingMap.keySet().iterator().next();
+        this.mappingVersion = mappingVersion;
         initMappers((Map<String, Object>) mappingMap.get(this.type));
     }
 
@@ -88,12 +104,26 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public MappingMetadata(String type, Map<String, Object> mapping) throws IOException {
         this.type = type;
         this.source = new CompressedXContent((builder, params) -> builder.mapContents(mapping), XContentType.JSON, ToXContent.EMPTY_PARAMS);
+        this.mappingVersion = Long.valueOf(0);
         Map<String, Object> withoutType = mapping;
         if (mapping.size() == 1 && mapping.containsKey(type)) {
             withoutType = (Map<String, Object>) mapping.get(type);
         }
         initMappers(withoutType);
     }
+
+    @SuppressWarnings("unchecked")
+    public MappingMetadata(String type, Map<String, Object> mapping, Long mappingVersion) throws IOException {
+        this.type = type;
+        this.source = new CompressedXContent((builder, params) -> builder.mapContents(mapping), XContentType.JSON, ToXContent.EMPTY_PARAMS);
+        this.mappingVersion = mappingVersion;
+        Map<String, Object> withoutType = mapping;
+        if (mapping.size() == 1 && mapping.containsKey(type)) {
+            withoutType = (Map<String, Object>) mapping.get(type);
+        }
+        initMappers(withoutType);
+    }
+
 
     @SuppressWarnings("unchecked")
     private void initMappers(Map<String, Object> withoutType) {
@@ -134,6 +164,8 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
         return this.source;
     }
 
+    public Long mappingVersion() { return this.mappingVersion; }
+
     /**
      * Converts the serialized compressed form of the mappings into a parsed map.
      */
@@ -153,6 +185,22 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public Map<String, Object> getSourceAsMap() throws ElasticsearchParseException {
         return sourceAsMap();
     }
+    /**
+     * Converts the Mapping Version field into a parsed map.
+     */
+       @SuppressWarnings("unchecked")
+    public Map<String, Object> mappingVersionAsMap() throws ElasticsearchParseException {
+        Map<String, Object> mappingVersionMap = new HashMap<String, Object>();
+        mappingVersionMap.put("mapping_version", this.mappingVersion);
+        return mappingVersionMap;
+    }
+
+    /**
+     * Converts the Mapping Version field into a parsed map.
+     */
+    public Map<String, Object> getMappingVersionAsMap() throws ElasticsearchParseException {
+        return mappingVersionAsMap();
+    }
 
     public Routing routing() {
         return this.routing;
@@ -162,6 +210,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(type());
         source().writeTo(out);
+        out.writeLong(mappingVersion());
         // routing
         out.writeBoolean(routing().required());
         if (out.getVersion().before(Version.V_6_0_0_alpha1)) {
@@ -186,6 +235,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
         if (routing.equals(that.routing) == false) return false;
         if (source.equals(that.source) == false) return false;
         if (type.equals(that.type) == false) return false;
+        if (mappingVersion.equals(that.mappingVersion) == false) return false;
 
         return true;
     }
@@ -194,6 +244,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public int hashCode() {
         int result = type.hashCode();
         result = 31 * result + source.hashCode();
+        result = 31 * result + mappingVersion.hashCode();
         result = 31 * result + routing.hashCode();
         return result;
     }
@@ -201,6 +252,7 @@ public class MappingMetadata extends AbstractDiffable<MappingMetadata> {
     public MappingMetadata(StreamInput in) throws IOException {
         type = in.readString();
         source = CompressedXContent.readCompressedString(in);
+        mappingVersion = in.readLong();
         // routing
         routing = new Routing(in.readBoolean());
         if (in.getVersion().before(Version.V_6_0_0_alpha1)) {

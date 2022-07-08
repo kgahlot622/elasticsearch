@@ -1054,6 +1054,7 @@ public class InternalEngine extends Engine {
                             plan.versionForIndexing,
                             index.primaryTerm(),
                             index.seqNo(),
+                            this.translog.indexSettings().getIndexMetadata().getMappingVersion(),
                             plan.currentNotFoundOrDeleted
                         );
                     }
@@ -1236,6 +1237,7 @@ public class InternalEngine extends Engine {
          */
         index.parsedDoc().updateSeqID(index.seqNo(), index.primaryTerm());
         index.parsedDoc().version().setLongValue(plan.versionForIndexing);
+        index.parsedDoc().updateMappingVersion(this.translog.indexSettings().getIndexMetadata().getMappingVersion());
         try {
             if (plan.addStaleOpToLucene) {
                 addStaleDocs(index.docs(), indexWriter);
@@ -1247,7 +1249,8 @@ public class InternalEngine extends Engine {
                 assert assertDocDoesNotExist(index, canOptimizeAddDocument(index) == false);
                 addDocs(index.docs(), indexWriter);
             }
-            return new IndexResult(plan.versionForIndexing, index.primaryTerm(), index.seqNo(), plan.currentNotFoundOrDeleted);
+            return new IndexResult(plan.versionForIndexing, index.primaryTerm(), index.seqNo(),
+                this.translog.indexSettings().getIndexMetadata().getMappingVersion(), plan.currentNotFoundOrDeleted);
         } catch (Exception ex) {
             if (ex instanceof AlreadyClosedException == false
                 && indexWriter.getTragicException() == null
@@ -1265,7 +1268,8 @@ public class InternalEngine extends Engine {
                  * we return a `MATCH_ANY` version to indicate no document was index. The value is
                  * not used anyway
                  */
-                return new IndexResult(ex, Versions.MATCH_ANY, index.primaryTerm(), index.seqNo());
+                return new IndexResult(ex, Versions.MATCH_ANY, index.primaryTerm(), index.seqNo(),
+                    this.translog.indexSettings().getIndexMetadata().getMappingVersion());
             } else {
                 throw ex;
             }

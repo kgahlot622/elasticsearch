@@ -28,7 +28,7 @@ public class ParsedDocument {
 
     private final String id, type;
     private final SeqNoFieldMapper.SequenceIDFields seqID;
-
+    private MappingVersionFieldMapper.MappingVersionFields mappingVersion;
     private final String routing;
 
     private final List<LuceneDocument> documents;
@@ -46,6 +46,8 @@ public class ParsedDocument {
         LuceneDocument document = new LuceneDocument();
         SeqNoFieldMapper.SequenceIDFields seqIdFields = SeqNoFieldMapper.SequenceIDFields.tombstone();
         seqIdFields.addFields(document);
+        MappingVersionFieldMapper.MappingVersionFields mappingVersionFields = MappingVersionFieldMapper.MappingVersionFields.tombstone();
+        mappingVersionFields.addFields(document);
         Field versionField = VersionFieldMapper.versionField();
         document.add(versionField);
         // Store the reason of a noop as a raw string in the _source field
@@ -56,6 +58,7 @@ public class ParsedDocument {
             seqIdFields,
             "",
             "_doc",
+            mappingVersionFields,
             null,
             Collections.singletonList(document),
             new BytesArray("{}"),
@@ -73,6 +76,8 @@ public class ParsedDocument {
         LuceneDocument document = new LuceneDocument();
         SeqNoFieldMapper.SequenceIDFields seqIdFields = SeqNoFieldMapper.SequenceIDFields.tombstone();
         seqIdFields.addFields(document);
+        MappingVersionFieldMapper.MappingVersionFields mappingVersionFields = MappingVersionFieldMapper.MappingVersionFields.tombstone();
+        mappingVersionFields.addFields(document);
         Field versionField = VersionFieldMapper.versionField();
         document.add(versionField);
         document.add(IdFieldMapper.idField(id));
@@ -81,6 +86,7 @@ public class ParsedDocument {
             seqIdFields,
             id,
             type,
+            mappingVersionFields,
             null,
             Collections.singletonList(document),
             new BytesArray("{}"),
@@ -94,6 +100,7 @@ public class ParsedDocument {
         SeqNoFieldMapper.SequenceIDFields seqID,
         String id,
         String type,
+        MappingVersionFieldMapper.MappingVersionFields mappingVersion,
         String routing,
         List<LuceneDocument> documents,
         BytesReference source,
@@ -104,12 +111,14 @@ public class ParsedDocument {
         this.seqID = seqID;
         this.id = id;
         this.type = type;
+        this.mappingVersion = mappingVersion;
         this.routing = routing;
         this.documents = documents;
         this.source = source;
         this.dynamicMappingsUpdate = dynamicMappingsUpdate;
         this.xContentType = xContentType;
     }
+
 
     public String id() {
         return this.id;
@@ -127,6 +136,10 @@ public class ParsedDocument {
         this.seqID.seqNo.setLongValue(sequenceNumber);
         this.seqID.seqNoDocValue.setLongValue(sequenceNumber);
         this.seqID.primaryTerm.setLongValue(primaryTerm);
+    }
+    public void updateMappingVersion(long mappingVersion) {
+        this.mappingVersion.mappingVersion.setLongValue(mappingVersion);
+        this.mappingVersion.mappingVersionDocValue.setLongValue(mappingVersion);
     }
 
     public String routing() {

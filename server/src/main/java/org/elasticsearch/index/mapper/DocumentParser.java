@@ -65,6 +65,8 @@ public final class DocumentParser {
         this.indexAnalyzers = indexAnalyzers;
     }
 
+    public IndexSettings indexSettings() { return this.indexSettings; }
+
     /**
      * Parse a document
      *
@@ -103,6 +105,7 @@ public final class DocumentParser {
             context.seqID(),
             context.sourceToParse().id(),
             context.sourceToParse().type(),
+            context.mappingVersion(),
             source.routing(),
             context.reorderParentAndGetDocs(),
             context.sourceToParse().source(),
