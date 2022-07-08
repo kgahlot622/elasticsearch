@@ -65,6 +65,8 @@ public final class DocumentParser {
         this.indexAnalyzers = indexAnalyzers;
     }
 
+    public IndexSettings indexSettings() { return this.indexSettings; }
+
     /**
      * Parse a document
      *

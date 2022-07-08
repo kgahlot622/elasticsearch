@@ -27,6 +27,7 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexingSlowLog.IndexingSlowLogMessage;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.InternalEngineTests;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.mapper.Uid;
@@ -242,6 +243,7 @@ public class IndexingSlowLogTests extends ESTestCase {
             SeqNoFieldMapper.SequenceIDFields.emptySeqID(),
             "id",
             "test",
+            MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion(),
             "routingValue",
             null,
             source,
@@ -272,6 +274,7 @@ public class IndexingSlowLogTests extends ESTestCase {
             SeqNoFieldMapper.SequenceIDFields.emptySeqID(),
             "id",
             "test",
+            MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion(),
             null,
             null,
             source,
@@ -303,6 +306,7 @@ public class IndexingSlowLogTests extends ESTestCase {
             SeqNoFieldMapper.SequenceIDFields.emptySeqID(),
             "id",
             "test",
+            MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion(),
             null,
             null,
             source,

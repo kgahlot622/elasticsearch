@@ -40,6 +40,7 @@ import org.elasticsearch.index.engine.InternalEngine;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.LuceneDocument;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.seqno.RetentionLeases;
@@ -530,17 +531,22 @@ public class RefreshListenersTests extends ESTestCase {
         Field idField = new Field("_id", id, IdFieldMapper.Defaults.FIELD_TYPE);
         Field versionField = new NumericDocValuesField("_version", Versions.MATCH_ANY);
         SeqNoFieldMapper.SequenceIDFields seqID = SeqNoFieldMapper.SequenceIDFields.emptySeqID();
+        MappingVersionFieldMapper.MappingVersionFields mappingVersion =
+            MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion();
         document.add(idField);
         document.add(versionField);
         document.add(seqID.seqNo);
         document.add(seqID.seqNoDocValue);
         document.add(seqID.primaryTerm);
+        document.add(mappingVersion.mappingVersion);
+        document.add(mappingVersion.mappingVersionDocValue);
         BytesReference source = new BytesArray(new byte[] { 1 });
         ParsedDocument doc = new ParsedDocument(
             versionField,
             seqID,
             id,
             "test",
+            mappingVersion,
             null,
             Arrays.asList(document),
             source,

@@ -123,6 +123,7 @@ public class TransportBulkShardOperationsAction extends TransportWriteAction<
                     index.id(),
                     index.seqNo(),
                     primaryTerm,
+                    index.mappingVersion(),
                     index.version(),
                     BytesReference.toBytes(index.source()),
                     index.routing(),

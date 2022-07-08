@@ -585,7 +585,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
         filterFields("", properties, fieldPredicate);
 
-        return new MappingMetadata(mappingMetadata.type(), sourceAsMap);
+        return new MappingMetadata(mappingMetadata.type(), sourceAsMap, mappingMetadata.mappingVersion());
     }
 
     @SuppressWarnings("unchecked")

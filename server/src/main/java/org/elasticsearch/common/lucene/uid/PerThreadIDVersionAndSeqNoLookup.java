@@ -20,6 +20,7 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.uid.VersionsAndSeqNoResolver.DocIdAndSeqNo;
 import org.elasticsearch.common.lucene.uid.VersionsAndSeqNoResolver.DocIdAndVersion;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.mapper.VersionFieldMapper;
 
@@ -104,6 +105,7 @@ final class PerThreadIDVersionAndSeqNoLookup {
         if (docID != DocIdSetIterator.NO_MORE_DOCS) {
             final long seqNo;
             final long term;
+            final long mappingVersion;
             if (loadSeqNo) {
                 seqNo = readNumericDocValues(context.reader(), SeqNoFieldMapper.NAME, docID);
                 term = readNumericDocValues(context.reader(), SeqNoFieldMapper.PRIMARY_TERM_NAME, docID);
@@ -111,8 +113,10 @@ final class PerThreadIDVersionAndSeqNoLookup {
                 seqNo = UNASSIGNED_SEQ_NO;
                 term = UNASSIGNED_PRIMARY_TERM;
             }
+            //TODO : CHECK IF WE SHOULD PUT A MAP CALLED loadMappingVersion
+            mappingVersion = readNumericDocValues(context.reader(), MappingVersionFieldMapper.NAME, docID);
             final long version = readNumericDocValues(context.reader(), VersionFieldMapper.NAME, docID);
-            return new DocIdAndVersion(docID, version, seqNo, term, context.reader(), context.docBase);
+            return new DocIdAndVersion(docID, version, seqNo, term, mappingVersion, context.reader(), context.docBase);
         } else {
             return null;
         }

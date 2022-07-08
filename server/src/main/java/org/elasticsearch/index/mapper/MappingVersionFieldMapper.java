@@ -2,6 +2,7 @@ package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
@@ -28,25 +29,32 @@ public class MappingVersionFieldMapper extends MetadataFieldMapper {
     public static class MappingVersionFields {
 
         public final Field mappingVersion;
+        public final Field mappingVersionDocValue;
 
-        private MappingVersionFields(Field mappingVersion) {
+        private MappingVersionFields(Field mappingVersion, Field mappingVersionDocValue) {
             Objects.requireNonNull(mappingVersion, "sequence number field cannot be null");
+            Objects.requireNonNull(mappingVersionDocValue, "mapping version dv cannot be null");
             this.mappingVersion = mappingVersion;
+            this.mappingVersionDocValue = mappingVersionDocValue;
         }
 
         public void addFields(LuceneDocument document) {
+
             document.add(mappingVersion);
+            document.add(mappingVersionDocValue);
         }
 
         public static MappingVersionFields emptyMappingVersion() {
             return new MappingVersionFields(
-                new LongPoint(NAME, 0)
+                new LongPoint(NAME, 0),
+                new NumericDocValuesField(NAME, 0)
             );
         }
 
         public static MappingVersionFields tombstone() {
             return new MappingVersionFields(
-                new LongPoint(NAME, 0)
+                new LongPoint(NAME, 0),
+                new NumericDocValuesField(NAME, 0)
             );
         }
     }
@@ -160,6 +168,7 @@ public class MappingVersionFieldMapper extends MetadataFieldMapper {
         assert mappingVersion != null;
         for (LuceneDocument doc : context.nonRootDocuments()) {
             doc.add(mappingVersion.mappingVersion);
+            doc.add(mappingVersion.mappingVersionDocValue);
 
         }
     }

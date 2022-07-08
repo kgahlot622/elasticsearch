@@ -196,7 +196,8 @@ public class MetadataMappingService {
                     mapperService.documentMapper(MapperService.DEFAULT_MAPPING)
                 )) {
                     if (mapper != null) {
-                        indexMetadataBuilder.putMapping(new MappingMetadata(mapper.mappingSource()));
+                        indexMetadataBuilder.putMapping(new MappingMetadata(mapper.mappingSource(),
+                            indexMetadataBuilder.mappingVersion() + (updatedMapping ? 1 : 0)));
                     }
                 }
                 if (updatedMapping) {

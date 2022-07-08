@@ -108,6 +108,7 @@ import org.elasticsearch.index.mapper.MapperBuilderContext;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.Mapping;
 import org.elasticsearch.index.mapper.MappingLookup;
+import org.elasticsearch.index.mapper.MappingVersionFieldMapper;
 import org.elasticsearch.index.mapper.MetadataFieldMapper;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.RootObjectMapper;
@@ -5895,18 +5896,22 @@ public class InternalEngineTests extends EngineTestCase {
             final String type = "type";
             final Field versionField = new NumericDocValuesField("_version", 0);
             final SeqNoFieldMapper.SequenceIDFields seqID = SeqNoFieldMapper.SequenceIDFields.emptySeqID();
+            final MappingVersionFieldMapper.MappingVersionFields mappingVersion =
+                MappingVersionFieldMapper.MappingVersionFields.emptyMappingVersion();
             final LuceneDocument document = new LuceneDocument();
             document.add(uidField);
             document.add(versionField);
             document.add(seqID.seqNo);
             document.add(seqID.seqNoDocValue);
             document.add(seqID.primaryTerm);
+            document.add(mappingVersion.mappingVersion);
             final BytesReference source = new BytesArray(new byte[] { 1 });
             final ParsedDocument parsedDocument = new ParsedDocument(
                 versionField,
                 seqID,
                 id,
                 type,
+                mappingVersion,
                 "routing",
                 Collections.singletonList(document),
                 source,

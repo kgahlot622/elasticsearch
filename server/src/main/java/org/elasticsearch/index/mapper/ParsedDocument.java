@@ -100,28 +100,6 @@ public class ParsedDocument {
         SeqNoFieldMapper.SequenceIDFields seqID,
         String id,
         String type,
-        String routing,
-        List<LuceneDocument> documents,
-        BytesReference source,
-        XContentType xContentType,
-        Mapping dynamicMappingsUpdate
-    ) {
-        this.version = version;
-        this.seqID = seqID;
-        this.id = id;
-        this.type = type;
-        this.routing = routing;
-        this.documents = documents;
-        this.source = source;
-        this.dynamicMappingsUpdate = dynamicMappingsUpdate;
-        this.xContentType = xContentType;
-    }
-
-    public ParsedDocument(
-        Field version,
-        SeqNoFieldMapper.SequenceIDFields seqID,
-        String id,
-        String type,
         MappingVersionFieldMapper.MappingVersionFields mappingVersion,
         String routing,
         List<LuceneDocument> documents,
@@ -161,6 +139,7 @@ public class ParsedDocument {
     }
     public void updateMappingVersion(long mappingVersion) {
         this.mappingVersion.mappingVersion.setLongValue(mappingVersion);
+        this.mappingVersion.mappingVersionDocValue.setLongValue(mappingVersion);
     }
 
     public String routing() {
